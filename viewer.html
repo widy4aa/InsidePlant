@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jelajahi 3D - Sel Tumbuhan 3D</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Three.js importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body class="page-viewer">
+
+  <!-- Top Toolbar -->
+  <div class="viewer-nav">
+    <div class="vn-left">
+      <a href="index.html" class="vn-back" title="Kembali">←</a>
+      <span class="vn-title">🌿 Sel Tumbuhan</span>
+    </div>
+    <div class="vn-right">
+      <button class="vn-btn active" id="btn-labels" onclick="toggleLabels()" title="Toggle Label">🏷️ Label</button>
+      <button class="vn-btn" id="btn-settings" onclick="toggleSettings()" title="Pengaturan">⚙️ Setting</button>
+    </div>
+  </div>
+
+  <!-- Main Body -->
+  <div class="viewer-body">
+
+    <!-- 3D Canvas -->
+    <div id="viewer-wrap">
+      <canvas id="three-canvas"></canvas>
+
+      <!-- Loading Overlay -->
+      <div id="loading">
+        <div class="spinner"></div>
+        <div class="progress-wrap"><div id="progress-bar"></div></div>
+        <div id="load-label">Memuat model…</div>
+      </div>
+
+      <!-- Controls Hint -->
+      <div id="controls-hint">
+        <span>🖱️ Seret</span> untuk memutar &nbsp;·&nbsp;
+        <span>Scroll</span> untuk zoom &nbsp;·&nbsp;
+        <span>Klik kanan</span> untuk geser
+      </div>
+
+      <!-- Info Popup -->
+      <div id="info-popup">
+        <button class="popup-close" onclick="closeInfo()">✕</button>
+        <div class="popup-header">
+          <span class="popup-icon" id="popup-icon">🟢</span>
+          <div class="popup-num" id="popup-num">1</div>
+          <div>
+            <div class="popup-name" id="popup-name">—</div>
+            <div class="popup-sub" id="popup-sub">—</div>
+          </div>
+        </div>
+        <div class="popup-desc" id="popup-desc">—</div>
+        <ul class="popup-detail" id="popup-detail"></ul>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel hidden" id="settingsPanel">
+      <!-- Layers -->
+      <div class="sp-section">
+        <h3>🧬 Lapisan Model</h3>
+        <div class="sp-layer active" id="layer-0" onclick="toggleLayer(0)">
+          <div class="sp-dot" style="background: #66BB6A"></div>
+          Badan Sel
+          <div class="sp-check">✓</div>
+        </div>
+        <div class="sp-layer active" id="layer-1" onclick="toggleLayer(1)">
+          <div class="sp-dot" style="background: #26C6DA"></div>
+          Membran
+          <div class="sp-check">✓</div>
+        </div>
+      </div>
+
+      <!-- Lighting -->
+      <div class="sp-section">
+        <h3>💡 Pencahayaan</h3>
+        <div class="sp-slider">
+          <label>Kecerahan <span id="v-amb">0.70</span></label>
+          <input type="range" min="0" max="3" step="0.05" value="0.70" oninput="setAmbient(this.value)">
+        </div>
+        <div class="sp-slider">
+          <label>Cahaya Utama <span id="v-dir">2.20</span></label>
+          <input type="range" min="0" max="5" step="0.1" value="2.20" oninput="setDirectional(this.value)">
+        </div>
+        <div class="sp-slider">
+          <label>Exposure <span id="v-env">1.30</span></label>
+          <input type="range" min="0.3" max="3" step="0.05" value="1.30" oninput="setEnv(this.value)">
+        </div>
+      </div>
+
+      <!-- Organelle Tags -->
+      <div class="sp-section">
+        <h3>🏷️ Bagian Sel</h3>
+        <div class="sp-tags">
+          <button class="sp-tag" onclick="focusOrganelle(1)">🧱 Dinding Sel</button>
+          <button class="sp-tag" onclick="focusOrganelle(2)">🫧 Membran Sel</button>
+          <button class="sp-tag" onclick="focusOrganelle(3)">🫠 Sitoplasma</button>
+          <button class="sp-tag" onclick="focusOrganelle(4)">🧠 Nukleus</button>
+          <button class="sp-tag" onclick="focusOrganelle(5)">⚡ Mitokondria</button>
+          <button class="sp-tag" onclick="focusOrganelle(6)">🛤️ Retikulum Endoplasma</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sp-section">
+        <h3>🎮 Kontrol</h3>
+        <div class="sp-btns">
+          <button class="sp-btn sp-btn-outline" onclick="resetCamera()">🔄 Reset Kamera</button>
+          <a href="info.html" class="sp-btn sp-btn-primary" style="text-align:center;">📚 Pelajari Sel</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Plant background decorations -->
+  <div class="viewer-plants">
+    <span class="vp vp-1">🌿</span>
+    <span class="vp vp-2">🍃</span>
+    <span class="vp vp-3">🌱</span>
+    <span class="vp vp-4">☘️</span>
+    <span class="vp vp-5">🌿</span>
+    <span class="vp vp-6">🍀</span>
+  </div>
+
+  <!-- Three.js viewer script -->
+  <script type="module" src="script.js"></script>
+
+</body>
+</html>

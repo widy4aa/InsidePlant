@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pelajari Sel Tumbuhan - Sel Tumbuhan 3D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-info">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">🌿 Sel Tumbuhan 3D</a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Beranda</a>
+      <a href="info.html" class="active">Pelajari</a>
+      <a href="viewer.html">Jelajahi 3D</a>
+    </div>
+    <button class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+  </nav>
+
+  <!-- Header -->
+  <section class="info-header">
+    <h1>📚 Mengenal Bagian Sel Tumbuhan</h1>
+    <p>Yuk pelajari setiap bagian sel tumbuhan! Klik kartu untuk melihat fakta seru 🌱</p>
+  </section>
+
+  <!-- Organelle Cards -->
+  <section class="organelles">
+    <div class="organelles-grid">
+
+      <!-- 1. Dinding Sel -->
+      <div class="org-card" style="--org-color: #8BC34A" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🧱</span>
+          <div>
+            <div class="org-title">Dinding Sel</div>
+            <div class="org-subtitle">Cell Wall</div>
+          </div>
+        </div>
+        <div class="org-desc">Lapisan kaku paling luar sel tumbuhan. Seperti <strong>tembok rumah</strong> yang memberi bentuk dan melindungi sel! Terbuat dari selulosa yang sangat kuat.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Dinding sel hanya ada di sel tumbuhan, TIDAK ada di sel hewan! Itulah kenapa tumbuhan bisa berdiri tegak. Selulosa di dinding sel juga dipakai untuk membuat kertas lho!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 2. Membran Sel -->
+      <div class="org-card" style="--org-color: #26C6DA" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🫧</span>
+          <div>
+            <div class="org-title">Membran Sel</div>
+            <div class="org-subtitle">Cell Membrane</div>
+          </div>
+        </div>
+        <div class="org-desc">Lapisan tipis di dalam dinding sel. Seperti <strong>pintu gerbang</strong> yang memilih siapa yang boleh masuk dan keluar sel!</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Membran sel sangat tipis — hanya sekitar 7 nanometer! Itu 10.000 kali lebih tipis dari selembar kertas. Tapi hebatnya, dia bisa memilih zat mana yang boleh lewat!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 3. Sitoplasma -->
+      <div class="org-card" style="--org-color: #66BB6A" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🫠</span>
+          <div>
+            <div class="org-title">Sitoplasma</div>
+            <div class="org-subtitle">Cytoplasm</div>
+          </div>
+        </div>
+        <div class="org-desc">Cairan seperti <strong>jeli</strong> yang mengisi seluruh ruang di dalam sel. Tempat semua organel berenang dan bekerja! Terdiri dari 70-80% air.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Sitoplasma itu kayak kolam renang buat organel! Semua aktivitas penting sel terjadi di sini. Bayangkan seperti kota yang sibuk — semua orang bekerja di dalamnya!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 4. Nukleus -->
+      <div class="org-card" style="--org-color: #42A5F5" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🧠</span>
+          <div>
+            <div class="org-title">Nukleus</div>
+            <div class="org-subtitle">Nucleus (Inti Sel)</div>
+          </div>
+        </div>
+        <div class="org-desc">Pusat kendali sel — seperti <strong>otak</strong> yang mengatur semua kegiatan sel! Di dalamnya ada DNA yang menyimpan seluruh informasi genetik.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Kalau DNA dalam satu sel manusia direntangkan, panjangnya bisa mencapai 2 meter! Tapi semuanya dilipat sangat rapi di dalam nukleus yang kecil sekali.
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 5. Mitokondria -->
+      <div class="org-card" style="--org-color: #FFA726" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">⚡</span>
+          <div>
+            <div class="org-title">Mitokondria</div>
+            <div class="org-subtitle">Mitochondria</div>
+          </div>
+        </div>
+        <div class="org-desc">Pembangkit energi sel — seperti <strong>pembangkit listrik</strong>! Mengubah makanan menjadi energi (ATP) yang bisa dipakai sel untuk bekerja.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Mitokondria punya DNA sendiri yang berbeda dari DNA di nukleus! Para ilmuwan percaya mitokondria dulunya adalah bakteri yang "dimakan" oleh sel jutaan tahun lalu, lalu mereka hidup bersama.
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 6. Retikulum Endoplasma -->
+      <div class="org-card" style="--org-color: #EF5350" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🛤️</span>
+          <div>
+            <div class="org-title">Retikulum Endoplasma</div>
+            <div class="org-subtitle">Endoplasmic Reticulum (RE)</div>
+          </div>
+        </div>
+        <div class="org-desc">Jaringan membran berlipat-lipat seperti <strong>jalan raya</strong> di dalam sel. Ada 2 jenis: RE Kasar (ada ribosom) dan RE Halus (tanpa ribosom)!</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Kalau RE Kasar direntangkan, luasnya bisa 30 kali lebih besar dari membran sel! RE Kasar sibuk membuat protein, sedangkan RE Halus membuat lemak dan menyingkirkan racun.
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 7. Vakuola -->
+      <div class="org-card" style="--org-color: #AB47BC" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">💧</span>
+          <div>
+            <div class="org-title">Vakuola</div>
+            <div class="org-subtitle">Vacuole</div>
+          </div>
+        </div>
+        <div class="org-desc">Kantong besar berisi cairan — seperti <strong>gudang penyimpanan raksasa</strong>! Menyimpan air, nutrisi, dan limbah sel. Bisa mengisi 90% ruang sel!</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Vakuola sel tumbuhan SANGAT besar! Saking besarnya, organel lain terdorong ke pinggir. Saat tumbuhan layu, itu karena vakuolanya kehilangan air. Siram air = vakuola terisi lagi = tumbuhan tegak!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 8. Kloroplas -->
+      <div class="org-card" style="--org-color: #2E7D32" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">☀️</span>
+          <div>
+            <div class="org-title">Kloroplas</div>
+            <div class="org-subtitle">Chloroplast</div>
+          </div>
+        </div>
+        <div class="org-desc">Organel hijau tempat terjadinya <strong>fotosintesis</strong>! Mengubah cahaya matahari, air, dan CO₂ menjadi makanan (glukosa) dan oksigen.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Kloroplas mengandung klorofil yang membuat daun berwarna hijau! Saat musim gugur, klorofil rusak sehingga daun berubah warna jadi kuning dan merah. Kloroplas juga punya DNA sendiri!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 9. Aparatus Golgi -->
+      <div class="org-card" style="--org-color: #FF7043" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">📦</span>
+          <div>
+            <div class="org-title">Aparatus Golgi</div>
+            <div class="org-subtitle">Golgi Apparatus</div>
+          </div>
+        </div>
+        <div class="org-desc">Seperti <strong>kantor pos</strong> sel! Menerima, mengemas, dan mengirimkan protein dan zat lain ke tempat yang tepat di dalam dan luar sel.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Aparatus Golgi dinamai dari ilmuwan Italia, Camillo Golgi, yang menemukannya tahun 1898. Satu sel bisa punya 10-20 aparatus Golgi yang bekerja tanpa henti seperti pabrik pengiriman paket!
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+      <!-- 10. Ribosom -->
+      <div class="org-card" style="--org-color: #8D6E63" onclick="this.classList.toggle('expanded')">
+        <div class="org-top">
+          <span class="org-emoji">🔩</span>
+          <div>
+            <div class="org-title">Ribosom</div>
+            <div class="org-subtitle">Ribosome</div>
+          </div>
+        </div>
+        <div class="org-desc">Organel super kecil yang bekerja seperti <strong>pabrik mini</strong>! Tugasnya membaca pesan dari DNA dan membuat protein yang dibutuhkan sel.</div>
+        <div class="org-fun">
+          <span class="fun-label">💡 Fakta Seru</span>
+          Satu sel bisa punya JUTAAN ribosom! Mereka sangat kecil — cuma 25 nanometer. Beberapa menempel di RE Kasar (seperti pekerja di pabrik), beberapa mengapung bebas di sitoplasma.
+        </div>
+        <div class="expand-hint">Ketuk untuk fakta seru ✨</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="info-cta">
+    <p>Sudah paham? Yuk lihat langsung model 3D-nya! 🔬</p>
+    <a href="viewer.html" class="btn btn-primary">🚀 Jelajahi Model 3D</a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>🌿 Sel Tumbuhan 3D Explorer — Dibuat untuk Belajar Sains yang Seru! 🔬</p>
+  </footer>
+
+</body>
+</html>

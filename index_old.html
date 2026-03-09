@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Plant Cell Explorer</title>
+
+  <!-- Three.js via importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green-bright: #a8e063;
+      --green-deep:   #56ab2f;
+      --bg:           #0d1117;
+      --surface:      rgba(255,255,255,0.04);
+      --border:       rgba(255,255,255,0.09);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 32px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .h-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--green-deep), var(--green-bright));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 1.35rem; font-weight: 700;
+      background: linear-gradient(90deg, var(--green-bright), var(--green-deep));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header small { font-size: 0.75rem; color: rgba(255,255,255,0.4); display: block; }
+
+    /* ── Layout ──────────────────────────────── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 0;
+      flex: 1;
+      height: calc(100vh - 79px);
+    }
+
+    /* ── Canvas area ─────────────────────────── */
+    #viewer-wrap {
+      position: relative;
+      background: radial-gradient(ellipse at center, #0a2011 0%, #050d07 100%);
+    }
+    #three-canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Loading overlay */
+    #loading {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, #0a2011 0%, #050d07 100%);
+      z-index: 5;
+      gap: 18px;
+      transition: opacity 0.5s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 56px; height: 56px;
+      border: 3px solid rgba(168,224,99,0.15);
+      border-top-color: var(--green-bright);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-bar-wrap {
+      width: 220px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green-deep), var(--green-bright));
+      border-radius: 99px;
+      transition: width 0.2s ease;
+    }
+    #load-label { font-size: 0.82rem; color: rgba(255,255,255,0.5); }
+
+    /* Controls hint */
+    #controls-hint {
+      position: absolute;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 20px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.5);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #controls-hint span { color: var(--green-bright); }
+
+    /* ── Side panel ──────────────────────────── */
+    aside {
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .panel-section {
+      padding: 22px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-section:last-child { border-bottom: none; }
+
+    .panel-section h2 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 14px;
+    }
+
+    .model-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--green-bright), var(--green-deep));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .model-sub { font-size: 0.82rem; color: rgba(255,255,255,0.45); line-height: 1.5; }
+
+    /* Toggle layers */
+    .layer-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      margin-bottom: 8px;
+    }
+    .layer-btn:hover { background: rgba(255,255,255,0.07); }
+    .layer-btn.active { border-color: var(--green-deep); background: rgba(86,171,47,0.12); }
+    .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .layer-label { flex: 1; text-align: left; }
+    .layer-badge {
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.4);
+    }
+    .layer-btn.active .layer-badge {
+      background: rgba(86,171,47,0.25);
+      color: var(--green-bright);
+    }
+
+    /* Lighting slider */
+    .slider-row {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 14px;
+    }
+    .slider-row label {
+      font-size: 0.78rem;
+      display: flex; justify-content: space-between;
+      color: rgba(255,255,255,0.5);
+    }
+    .slider-row label span { color: var(--green-bright); }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      background: var(--green-bright);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* Organelle tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .tag {
+      font-size: 0.72rem;
+      padding: 4px 11px;
+      border-radius: 99px;
+      background: rgba(86,171,47,0.1);
+      border: 1px solid rgba(86,171,47,0.3);
+      color: var(--green-bright);
+    }
+
+    /* Reset button */
+    .btn-reset {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, var(--green-deep), var(--green-bright));
+      border: none;
+      border-radius: 10px;
+      color: #0d1117;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-reset:hover { opacity: 0.85; }
+
+    /* ── 3D Labels ───────────────────────────── */
+    .label3d {
+      background: rgba(5, 15, 5, 0.82);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-left: 3px solid var(--lc, #a8e063);
+      padding: 5px 10px 4px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.15s, transform 0.15s;
+      user-select: none;
+      line-height: 1.4;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+    .label3d:hover {
+      background: rgba(10, 30, 10, 0.95);
+      transform: scale(1.05);
+    }
+    .label3d .lnum {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--lc, #a8e063);
+      margin-right: 5px;
+      background: rgba(255,255,255,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .label3d .lname {
+      color: #fff;
+      font-weight: 600;
+    }
+    .label3d .lsub {
+      display: block;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.62rem;
+      margin-left: 2px;
+    }
+
+    /* ── Info Popup ──────────────────────────── */
+    #info-popup {
+      position: absolute;
+      bottom: 60px;
+      left: 18px;
+      width: 272px;
+      background: rgba(4, 18, 4, 0.94);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-top: 3px solid var(--popup-color, #a8e063);
+      border-radius: 12px;
+      padding: 16px 18px;
+      z-index: 8;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    #info-popup.visible { display: block; animation: slideUp 0.2s ease; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #info-popup .popup-close {
+      position: absolute;
+      top: 10px; right: 12px;
+      background: none; border: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 1.1rem; cursor: pointer;
+      line-height: 1;
+    }
+    #info-popup .popup-close:hover { color: #fff; }
+    #info-popup .popup-header {
+      display: flex; align-items: center; gap: 9px;
+      margin-bottom: 10px;
+    }
+    #info-popup .popup-icon { font-size: 1.5rem; }
+    #info-popup .popup-num {
+      font-size: 0.65rem; font-weight: 800;
+      padding: 2px 7px; border-radius: 5px;
+      background: rgba(255,255,255,0.08);
+      color: var(--popup-color, #a8e063);
+    }
+    #info-popup .popup-name {
+      font-size: 0.95rem; font-weight: 700; color: #fff;
+    }
+    #info-popup .popup-sub {
+      font-size: 0.72rem; color: rgba(255,255,255,0.45);
+      margin-top: 1px;
+    }
+    #info-popup .popup-desc {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.6;
+      margin-bottom: 10px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 10px;
+    }
+    #info-popup .popup-detail {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    #info-popup .popup-detail li {
+      font-size: 0.74rem;
+      color: rgba(255,255,255,0.55);
+      padding-left: 12px;
+      position: relative;
+    }
+    #info-popup .popup-detail li::before {
+      content: '▸';
+      position: absolute; left: 0;
+      color: var(--popup-color, #a8e063);
+    }
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; grid-template-rows: 60vh auto; height: auto; }
+      #viewer-wrap { height: 60vh; }
+      aside { border-left: none; border-top: 1px solid var(--border); height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="h-icon">🌿</div>
+    <div>
+      <h1>3D Cell Explorer</h1>
+      <small>Local OBJ · Three.js Renderer</small>
+    </div>
+  </header>
+
+  <main>
+    <!-- ── 3D Viewport ── -->
+    <div id="viewer-wrap">
+      <canvas id="three-canvas"></canvas>
+
+      <!-- Loading screen -->
+      <div id="loading">
+        <div class="spinner"></div>
+        <div class="progress-bar-wrap"><div id="progress-bar"></div></div>
+        <div id="load-label">Memuat model 3D…</div>
+      </div>
+
+      <!-- Controls hint -->
+      <div id="controls-hint">
+        <span>🖱 Klik + Seret</span> Putar &nbsp;|&nbsp;
+        <span>Scroll</span> Zoom &nbsp;|&nbsp;
+        <span>Klik Kanan</span> Geser
+      </div>
+
+      <!-- Info popup -->
+      <div id="info-popup">
+        <button class="popup-close" onclick="closeInfo()">×</button>
+        <div class="popup-header">
+          <span class="popup-icon" id="popup-icon">🟢</span>
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="popup-num" id="popup-num">1</span>
+              <span class="popup-name" id="popup-name">Dinding Sel</span>
+            </div>
+            <div class="popup-sub" id="popup-sub">Cell Wall</div>
+          </div>
+        </div>
+        <p class="popup-desc" id="popup-desc"></p>
+        <ul class="popup-detail" id="popup-detail"></ul>
+      </div>
+
+    </div>
+
+    <!-- ── Side Panel ── -->
+    <aside>
+
+      <!-- Model info -->
+      <div class="panel-section">
+        <h2>Model</h2>
+        <div class="model-title">Plant Cell</div>
+        <div class="model-sub">Model 3D sel tumbuhan dengan tekstur difus &amp; normal map.</div>
+      </div>
+
+      <!-- Layer toggles -->
+      <div class="panel-section">
+        <h2>Lapisan Model</h2>
+        <button class="layer-btn active" id="btn-model0" onclick="toggleLayer(0)">
+          <div class="layer-dot" style="background:#4caf50"></div>
+          <span class="layer-label">Sel Utama</span>
+          <span class="layer-badge">model_0</span>
+        </button>
+        <button class="layer-btn active" id="btn-model1" onclick="toggleLayer(1)">
+          <div class="layer-dot" style="background:#80cbc4"></div>
+          <span class="layer-label">Membran Sel</span>
+          <span class="layer-badge">model_1</span>
+        </button>
+      </div>
+
+      <!-- Lighting controls -->
+      <div class="panel-section">
+        <h2>Pencahayaan</h2>
+        <div class="slider-row">
+          <label>Ambient <span id="v-amb">0.7</span></label>
+          <input type="range" id="sl-amb" min="0" max="3" step="0.05" value="0.7"
+                 oninput="setAmbient(this.value)">
+        </div>
+        <div class="slider-row">
+          <label>Directional <span id="v-dir">2.2</span></label>
+          <input type="range" id="sl-dir" min="0" max="6" step="0.1" value="2.2"
+                 oninput="setDirectional(this.value)">
+        </div>
+        <div class="slider-row">
+          <label>Env Intensity <span id="v-env">1.3</span></label>
+          <input type="range" id="sl-env" min="0" max="3" step="0.1" value="1.3"
+                 oninput="setEnv(this.value)">
+        </div>
+      </div>
+
+      <!-- Organelles -->
+      <div class="panel-section">
+        <h2>Organel</h2>
+        <div class="tags">
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(1)">🏠 Dinding Sel</span>
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(2)">🪜 Membran Sel</span>
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(3)">🟩 Sitoplasma</span>
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(4)">🔵 Nukleus</span>
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(5)">🟡 Mitokondria</span>
+          <span class="tag" style="cursor:pointer" onclick="focusOrganelle(6)">🔴 Retikulum Endoplasma</span>
+        </div>
+        <button class="btn-reset" id="btn-labels" onclick="toggleLabels()" style="margin-top:12px; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15);">🏷 Sembunyikan Label</button>
+      </div>
+
+      <!-- Reset -->
+      <div class="panel-section">
+        <button class="btn-reset" onclick="resetCamera()">↺ Reset Kamera</button>
+        <button class="btn-reset" id="btn-export" onclick="exportGLB()" style="margin-top:10px; background: linear-gradient(135deg,#1565c0,#42a5f5); color:#fff;">⬇ Export GLB</button>
+      </div>
+
+    </aside>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OBJLoader }      from 'three/addons/loaders/OBJLoader.js';
+    import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+    import { RGBELoader }     from 'three/addons/loaders/RGBELoader.js';
+    import { GLTFExporter }   from 'three/addons/exporters/GLTFExporter.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ── Scene setup ──────────────────────────────────────────
+    const canvas  = document.getElementById('three-canvas');
+    const wrap    = document.getElementById('viewer-wrap');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // CSS2D label renderer (HTML overlay)
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.left = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    wrap.appendChild(labelRenderer.domElement);
+    renderer.outputColorSpace  = THREE.SRGBColorSpace;
+    renderer.toneMapping       = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.3;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x050d07);
+    scene.fog = new THREE.FogExp2(0x050d07, 0.003);
+
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+    camera.position.set(0, 80, 280);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping    = true;
+    controls.dampingFactor    = 0.06;
+    controls.minDistance      = 30;
+    controls.maxDistance      = 600;
+    controls.autoRotate       = true;
+    controls.autoRotateSpeed  = 0.5;
+
+    // ── Lighting ─────────────────────────────────────────────
+    // Soft fill — simulate sky ambient
+    const ambientLight = new THREE.AmbientLight(0xd6f5c0, 0.7);
+    scene.add(ambientLight);
+
+    // Main sunlight — warm, angled from top-right
+    const dirLight = new THREE.DirectionalLight(0xfff4d0, 2.2);
+    dirLight.position.set(200, 400, 150);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    scene.add(dirLight);
+
+    // Rim / back light — cool green bounce
+    const backLight = new THREE.DirectionalLight(0x80d040, 0.5);
+    backLight.position.set(-150, -80, -200);
+    scene.add(backLight);
+
+    // Interior point light — subtle green glow inside cell
+    const pointLight = new THREE.PointLight(0x66bb33, 1.0, 600);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+
+    // ── Textures ─────────────────────────────────────────────
+    const texLoader = new THREE.TextureLoader();
+    const BASE = 'Plant Cell/';
+
+    function loadTex(file, colorSpace = THREE.SRGBColorSpace) {
+      const t = texLoader.load(BASE + file);
+      t.colorSpace = colorSpace;
+      return t;
+    }
+
+    const diffuseTex = loadTex('PlantCell-Diffuse.png');
+    diffuseTex.wrapS = THREE.RepeatWrapping;
+    diffuseTex.wrapT = THREE.RepeatWrapping;
+
+    const membraneTex = loadTex('PlantCellMembrian.png');
+    membraneTex.wrapS = THREE.RepeatWrapping;
+    membraneTex.wrapT = THREE.RepeatWrapping;
+
+    const normalTex  = loadTex('plant_cell_normal_map.tga.png', THREE.LinearSRGBColorSpace);
+    normalTex.wrapS = THREE.RepeatWrapping;
+    normalTex.wrapT = THREE.RepeatWrapping;
+    normalTex.colorSpace = THREE.NoColorSpace;
+
+    // Materials
+    const matCell = new THREE.MeshStandardMaterial({
+      map:         diffuseTex,
+      normalMap:   normalTex,
+      normalScale: new THREE.Vector2(1.2, 1.2),
+      roughness:   0.45,
+      metalness:   0.08,
+      // Subtle green emissive to boost contrast/saturation
+      emissive:          new THREE.Color(0x0d2200),
+      emissiveIntensity: 0.4,
+    });
+
+    const matMembrane = new THREE.MeshStandardMaterial({
+      map:          membraneTex,
+      roughness:    0.35,
+      metalness:    0.1,
+      transparent:  true,
+      opacity:      0.22,
+      side:         THREE.DoubleSide,
+      depthWrite:   false,
+    });
+
+    // ── OBJ Loading ───────────────────────────────────────────
+    const loadingEl  = document.getElementById('loading');
+    const progressEl = document.getElementById('progress-bar');
+    const labelEl    = document.getElementById('load-label');
+
+    const models = [null, null];
+
+    function applyMaterial(obj, mat) {
+      obj.traverse(child => {
+        if (child.isMesh) {
+          child.material = mat;
+          child.castShadow    = true;
+          child.receiveShadow = true;
+        }
+      });
+    }
+
+    function centerAndFit(obj) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const center = box.getCenter(new THREE.Vector3());
+      obj.position.sub(center);
+    }
+
+    const objLoader = new OBJLoader();
+    let loadedCount = 0;
+
+    function onProgress(name, xhr) {
+      if (xhr.lengthComputable) {
+        const pct = (xhr.loaded / xhr.total) * 100;
+        progressEl.style.width = (loadedCount * 50 + pct * 0.5) + '%';
+      }
+      labelEl.textContent = `Memuat ${name}… `;
+    }
+
+    function onLoaded() {
+      loadedCount++;
+      progressEl.style.width = (loadedCount * 50) + '%';
+      if (loadedCount === 2) {
+        progressEl.style.width = '100%';
+        setTimeout(() => {
+          loadingEl.classList.add('hidden');
+          controls.autoRotate = true;
+          createLabels();
+        }, 400);
+      }
+    }
+
+    // Load model_0 — cell body
+    objLoader.load(
+      BASE + 'model_0.obj',
+      obj => {
+        applyMaterial(obj, matCell);
+        centerAndFit(obj);
+        scene.add(obj);
+        models[0] = obj;
+        onLoaded();
+      },
+      xhr => onProgress('Sel Utama', xhr),
+      err => { console.error('model_0 error', err); onLoaded(); }
+    );
+
+    // Load model_1 — membrane
+    objLoader.load(
+      BASE + 'model_1.obj',
+      obj => {
+        applyMaterial(obj, matMembrane);
+        centerAndFit(obj);
+        obj.position.y += 20;
+        scene.add(obj);
+        models[1] = obj;
+        onLoaded();
+      },
+      xhr => onProgress('Membran', xhr),
+      err => { console.error('model_1 error', err); onLoaded(); }
+    );
+
+    // ── Resize ────────────────────────────────────────────────
+    function resize() {
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      renderer.setSize(w, h, false);
+      labelRenderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(wrap);
+    resize();
+
+    // ── Render loop ───────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    animate();
+
+    // ── Exposed controls (called by HTML buttons) ─────────────
+    const defaultCamPos = camera.position.clone();
+
+    window.toggleLayer = (idx) => {
+      if (!models[idx]) return;
+      models[idx].visible = !models[idx].visible;
+      const btn = document.getElementById('btn-model' + idx);
+      btn.classList.toggle('active', models[idx].visible);
+    };
+
+    window.setAmbient = (v) => {
+      ambientLight.intensity = parseFloat(v);
+      document.getElementById('v-amb').textContent = parseFloat(v).toFixed(2);
+    };
+    window.setDirectional = (v) => {
+      dirLight.intensity = parseFloat(v);
+      document.getElementById('v-dir').textContent = parseFloat(v).toFixed(2);
+    };
+    window.setEnv = (v) => {
+      renderer.toneMappingExposure = parseFloat(v);
+      document.getElementById('v-env').textContent = parseFloat(v).toFixed(2);
+    renderer.toneMappingExposure = parseFloat(v);
+    };
+    window.resetCamera = () => {
+      camera.position.copy(defaultCamPos);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    };
+
+    // Stop auto-rotate on user interaction
+    controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+    // ── Shift+Click debug: show 3D coordinates ───────────────
+    {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      canvas.addEventListener('click', (e) => {
+        if (!e.shiftKey) return;
+        const rect = canvas.getBoundingClientRect();
+        mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+        mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const targets = models.filter(Boolean);
+        const hits = raycaster.intersectObjects(targets, true);
+        if (hits.length) {
+          const p = hits[0].point;
+          console.log(`Shift-click pos: [${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}]`);
+        }
+      });
+    }
+
+    // ── Organelle Labels ─────────────────────────────────────
+    // Positions determined from OBJ geometry analysis (after centerAndFit):
+    // Model_0: X[-135,135] Y[-65,65] Z[-120,120], nucleus dome at X≈60 Y≈40 Z≈0
+    // Model_1 (membrane): flat at Y=20 after +20 offset
+    const ORGANELLES = [
+      {
+        id: 1, name: 'Dinding Sel', sub: 'Cell Wall',
+        icon: '🟢', color: '#c6ff00',
+        pos: [0, -10, 118],
+        desc: 'Lapisan kaku paling luar sel, berwarna hijau terang kekuningan. Berbentuk heksagonal dan tersusun dari selulosa, memberi kekuatan mekanis dan bentuk tetap pada sel.',
+        detail: ['Tersusun dari selulosa & pektin', 'Memberi bentuk heksagonal pada sel', 'Melindungi dari tekanan osmotik', 'Hanya dimiliki oleh sel tumbuhan']
+      },
+      {
+        id: 2, name: 'Membran Sel', sub: 'Cell Membrane',
+        icon: '🩵', color: '#80deea',
+        pos: [-65, 22, 85],
+        desc: 'Lapisan tipis semi-permeabel di dalam dinding sel. Mengatur transportasi zat yang keluar dan masuk ke dalam sel.',
+        detail: ['Tersusun dari fosfolipid bilayer', 'Semi-permeabel — selektif terhadap zat', 'Mengandung protein transport & reseptor', 'Mengontrol keluar-masuknya zat']
+      },
+      {
+        id: 3, name: 'Sitoplasma', sub: 'Cytoplasm',
+        icon: '🟩', color: '#69f0ae',
+        pos: [-40, 22, 55],
+        desc: 'Cairan transparan kehijauan yang mengisi seluruh ruang di dalam membran sel. Tempat berlangsungnya berbagai reaksi kimia dan metabolisme sel.',
+        detail: ['Mengandung 70–80% air (sitosol)', 'Tempat metabolisme seluler', 'Menopang dan menghubungkan organel', 'Mengandung protein, ion, dan molekul kecil']
+      },
+      {
+        id: 4, name: 'Nukleus', sub: 'Nucleus / Inti Sel',
+        icon: '🔵', color: '#42a5f5',
+        pos: [55, 50, 0],
+        desc: 'Bulatan besar berwarna hijau tua mengkilap di tengah sel. Pusat komando sel — mengandung DNA dan mengatur seluruh aktivitas serta pewarisan genetik sel.',
+        detail: ['Mengandung materi genetik (DNA & RNA)', 'Diselubungi membran nukleus ganda', 'Nukleolus (bola putih) memproduksi ribosom', 'Mengatur ekspresi gen & reproduksi sel']
+      },
+      {
+        id: 5, name: 'Mitokondria', sub: 'Mitochondria',
+        icon: '🟡', color: '#ffa726',
+        pos: [-20, 22, -35],
+        desc: 'Organel lonjong berwarna kuning-hijau yang tersebar di dalam sel. Disebut "pembangkit energi" sel karena menghasilkan ATP melalui respirasi seluler.',
+        detail: ['Menghasilkan ATP — energi utama sel', 'Memiliki membran dalam berlipat (krista)', 'Mengandung DNA sendiri (mtDNA)', 'Terlihat 4–5 buah di model ini']
+      },
+      {
+        id: 6, name: 'Retikulum Endoplasma', sub: 'Endoplasmic Reticulum',
+        icon: '🔴', color: '#ef9a9a',
+        pos: [25, 22, 40],
+        desc: 'Jaringan membran berlipat-lipat seperti spiral di sisi nukleus. Berfungsi sebagai jalur transportasi dan pengolahan zat di dalam sel.',
+        detail: ['RE Kasar: sintesis protein (ada ribosom)', 'RE Halus: sintesis lipid & detoksifikasi', 'Terhubung langsung ke membran nukleus', 'Mengirim vesikel ke Aparatus Golgi']
+      },
+    ];
+
+    let labelsVisible = true;
+    const labelObjects = [];
+
+    function createLabels() {
+      ORGANELLES.forEach(org => {
+        const div = document.createElement('div');
+        div.className = 'label3d';
+        div.style.setProperty('--lc', org.color);
+        div.innerHTML =
+          `<span class="lnum">${org.id}</span><span class="lname">${org.name}</span>` +
+          `<span class="lsub">${org.sub}</span>`;
+        div.addEventListener('click', e => { e.stopPropagation(); showInfo(org); });
+
+        const label = new CSS2DObject(div);
+        label.position.set(org.pos[0], org.pos[1], org.pos[2]);
+        scene.add(label);
+        labelObjects.push(label);
+      });
+    }
+
+    window.showInfo = (org) => {
+      const popup = document.getElementById('info-popup');
+      popup.style.setProperty('--popup-color', org.color);
+      document.getElementById('popup-icon').textContent = org.icon;
+      document.getElementById('popup-num').textContent  = org.id;
+      document.getElementById('popup-num').style.color  = org.color;
+      document.getElementById('popup-name').textContent = org.name;
+      document.getElementById('popup-sub').textContent  = org.sub;
+      document.getElementById('popup-desc').textContent = org.desc;
+      document.getElementById('popup-detail').innerHTML =
+        org.detail.map(d => `<li>${d}</li>`).join('');
+      popup.classList.add('visible');
+    };
+
+    window.closeInfo = () => {
+      document.getElementById('info-popup').classList.remove('visible');
+    };
+
+    window.toggleLabels = () => {
+      labelsVisible = !labelsVisible;
+      labelObjects.forEach(l => { l.visible = labelsVisible; });
+      document.getElementById('btn-labels').textContent =
+        labelsVisible ? '🏷 Sembunyikan Label' : '🏷 Tampilkan Label';
+    };
+
+    window.focusOrganelle = (id) => {
+      const org = ORGANELLES.find(o => o.id === id);
+      if (org) showInfo(org);
+    };
+
+    // ── GLB Export ────────────────────────────────────────────
+    window.exportGLB = () => {
+      const btn = document.getElementById('btn-export');
+      btn.textContent = '⏳ Mengekspor…';
+      btn.disabled = true;
+
+      // Kumpulkan hanya object yang visible & sudah loaded
+      const exportRoot = new THREE.Group();
+      models.forEach(m => { if (m) exportRoot.add(m.clone()); });
+
+      const exporter = new GLTFExporter();
+      exporter.parse(
+        exportRoot,
+        (glb) => {
+          const blob = new Blob([glb], { type: 'application/octet-stream' });
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement('a');
+          a.href     = url;
+          a.download = 'plant_cell.glb';
+          a.click();
+          URL.revokeObjectURL(url);
+          btn.textContent = '⬇ Export GLB';
+          btn.disabled = false;
+        },
+        (err) => {
+          console.error('GLTFExporter error:', err);
+          btn.textContent = '⬇ Export GLB';
+          btn.disabled = false;
+        },
+        { binary: true, embedImages: true }
+      );
+    };
+  </script>
+
+</body>
+</html>
